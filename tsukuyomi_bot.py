@@ -1,11 +1,12 @@
 import os
-import soundfile as sf
-import discord
-import openai
-import numpy as np
 
+import discord
+import numpy as np
+import openai
+import soundfile as sf
 from discord.channel import VoiceChannel
 from discord.player import FFmpegPCMAudio
+
 from tsukuyomichan_talksoft import TsukuyomichanTalksoft
 
 # DiscordのAPI設定 
@@ -50,25 +51,28 @@ async def on_message(message):
 		# 文章を読み上げる
 		if message.guild.voice_client:
 			print(message.content)
-
-			# ChatGPTに送信
-			openai.api_key = os.environ['OPENAI_API_KEY'] 
-			response = openai.ChatCompletion.create(
-				model="gpt-3.5-turbo",
-				messages=[
-					{"role": "system", "content": "簡潔に日本語で答えて。"},
-					{"role": "user", "content": message.content},
-					],
-				)
-			response_result = response["choices"][0]["message"]["content"]
-			print(response_result)
-
-			# DiscordのChannelに送信
-			await message.channel.send(response_result)
-			# 音声読み上げ
-			play_voice(response_result)
+			await process_message(message.content, message.channel)
 		else:
 			pass
+
+async def process_message(content, channel):
+	# ChatGPTに送信
+	openai.api_key = os.environ['OPENAI_API_KEY'] 
+	response = openai.ChatCompletion.create(
+		model="gpt-3.5-turbo",
+		messages=[
+			{"role": "system", "content": "簡潔に日本語で答えて。"},
+			{"role": "user", "content": content},
+		],
+	)
+	response_result = response["choices"][0]["message"]["content"]
+	print(response_result)
+
+	# DiscordのChannelに送信
+	await channel.send(response_result)
+	# 音声読み上げ
+	await play_voice(response_result)
+
 
 # 音声合成
 def play_voice(text):
